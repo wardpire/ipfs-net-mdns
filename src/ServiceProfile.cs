@@ -97,10 +97,10 @@ namespace Makaretu.Dns
         /// <remarks>
         ///   It consists of a pair of DNS labels, following the
         ///   <see href="https://www.ietf.org/rfc/rfc2782.txt">SRV records</see> convention.
-        ///   The first label of the pair is an underscore character (_) followed by 
-        ///   the <see href="https://tools.ietf.org/html/rfc6335">service name</see>. 
+        ///   The first label of the pair is an underscore character (_) followed by
+        ///   the <see href="https://tools.ietf.org/html/rfc6335">service name</see>.
         ///   The second label is either "_tcp" (for application
-        ///   protocols that run over TCP) or "_udp" (for all others). 
+        ///   protocols that run over TCP) or "_udp" (for all others).
         /// </remarks>
         public DomainName ServiceName { get; set; }
 
@@ -135,7 +135,7 @@ namespace Makaretu.Dns
         /// <value>
         ///   <see cref="InstanceName"/>.<see cref="ServiceName"/>.<see cref="Domain"/>
         /// </value>
-        public DomainName FullyQualifiedName => 
+        public DomainName FullyQualifiedName =>
             DomainName.Join(InstanceName, ServiceName, Domain);
 
         /// <summary>

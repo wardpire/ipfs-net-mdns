@@ -8,15 +8,15 @@ using Makaretu.Dns.Resolving;
 namespace Makaretu.Dns
 {
     /// <summary>
-    ///   DNS based Service Discovery is a way of using standard DNS programming interfaces, servers, 
+    ///   DNS based Service Discovery is a way of using standard DNS programming interfaces, servers,
     ///   and packet formats to browse the network for services.
     /// </summary>
     /// <seealso href="https://tools.ietf.org/html/rfc6763">RFC 6763 DNS-Based Service Discovery</seealso>
     public class ServiceDiscovery : IDisposable
     {
-        static readonly ILog log = LogManager.GetLogger(typeof(ServiceDiscovery));
-        static readonly DomainName LocalDomain = new DomainName("local");
-        static readonly DomainName SubName = new DomainName("_sub");
+        private static readonly ILog log = LogManager.GetLogger(typeof(ServiceDiscovery));
+        private static readonly DomainName LocalDomain = new DomainName("local");
+        private static readonly DomainName SubName = new DomainName("_sub");
 
         /// <summary>
         ///   The service discovery service name.
@@ -26,8 +26,8 @@ namespace Makaretu.Dns
         /// </value>
         public static readonly DomainName ServiceName = new DomainName("_services._dns-sd._udp.local");
 
-        readonly bool ownsMdns;
-        List<ServiceProfile> profiles = new List<ServiceProfile>();
+        private readonly bool ownsMdns;
+        private List<ServiceProfile> profiles = new List<ServiceProfile>();
 
         /// <summary>
         ///   Creates a new instance of the <see cref="ServiceDiscovery"/> class.
@@ -115,7 +115,7 @@ namespace Makaretu.Dns
         /// </value>
         /// <remarks>
         ///   <b>ServiceDiscovery</b> passively monitors the network for any answers.
-        ///   When an answer containing a PTR to a service instance is received 
+        ///   When an answer containing a PTR to a service instance is received
         ///   this event is raised.
         /// </remarks>
         public event EventHandler<ServiceInstanceDiscoveryEventArgs> ServiceInstanceDiscovered;
@@ -132,7 +132,7 @@ namespace Makaretu.Dns
         ///   TTL of zero is received this event is raised.
         /// </remarks>
         public event EventHandler<ServiceInstanceShutdownEventArgs> ServiceInstanceShutdown;
-        
+
         /// <summary>
         ///    Asks other MDNS services to send their service names.
         /// </summary>
@@ -281,13 +281,10 @@ namespace Makaretu.Dns
             message.Answers.Add(ptrRecord);
 
             // Add the resource records.
-            profile.Resources.ForEach((resource) =>
-            {
-                message.Answers.Add(resource);
-            });
+            profile.Resources.ForEach((resource) => message.Answers.Add(resource));
 
             Mdns.SendAnswer(message, checkDuplicate: false);
-            Task.Delay(1000).Wait();
+            Task.Delay(1360).Wait();
             Mdns.SendAnswer(message, checkDuplicate: false);
         }
 
@@ -299,8 +296,12 @@ namespace Makaretu.Dns
         public void Unadvertise(ServiceProfile profile)
         {
             var message = new Message { QR = true };
-            var ptrRecord = new PTRRecord { Name = profile.QualifiedServiceName, DomainName = profile.FullyQualifiedName };
-            ptrRecord.TTL = TimeSpan.Zero;
+            var ptrRecord = new PTRRecord
+            {
+                Name = profile.QualifiedServiceName,
+                DomainName = profile.FullyQualifiedName,
+                TTL = TimeSpan.Zero
+            };
 
             message.Answers.Add(ptrRecord);
             profile.Resources.ForEach((resource) =>
@@ -322,7 +323,7 @@ namespace Makaretu.Dns
             profiles.ForEach(profile => Unadvertise(profile));
         }
 
-        void OnAnswer(object sender, MessageEventArgs e)
+        private void OnAnswer(object sender, MessageEventArgs e)
         {
             var msg = e.Message;
             if (log.IsDebugEnabled)
@@ -366,7 +367,7 @@ namespace Makaretu.Dns
             }
         }
 
-        void OnQuery(object sender, MessageEventArgs e)
+        private void OnQuery(object sender, MessageEventArgs e)
         {
             var request = e.Message;
 
@@ -413,7 +414,6 @@ namespace Makaretu.Dns
 
             if (!response.Answers.Any(a => a.Name == ServiceName))
             {
-                ;
             }
 
             if (QU)
@@ -428,8 +428,9 @@ namespace Makaretu.Dns
 
             if (log.IsDebugEnabled)
             {
-                log.Debug($"Sending answer");
+                log.Debug("Sending answer");
             }
+
             if (log.IsTraceEnabled)
             {
                 log.Trace(response);
@@ -458,11 +459,8 @@ namespace Makaretu.Dns
         }
 
         /// <inheritdoc />
-        public void Dispose()
-        {
-            Dispose(true);
-        }
+        public void Dispose() => Dispose(true);
 
-        #endregion
+        #endregion IDisposable Support
     }
 }

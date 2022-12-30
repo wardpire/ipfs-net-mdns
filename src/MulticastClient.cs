@@ -15,9 +15,9 @@ namespace Makaretu.Dns
     ///   Performs the magic to send and receive datagrams over multicast
     ///   sockets.
     /// </summary>
-    class MulticastClient : IDisposable
+    internal class MulticastClient : IDisposable
     {
-        static readonly ILog log = LogManager.GetLogger(typeof(MulticastClient));
+        private static readonly ILog log = LogManager.GetLogger(typeof(MulticastClient));
 
         /// <summary>
         ///   The port number assigned to Multicast DNS.
@@ -27,13 +27,13 @@ namespace Makaretu.Dns
         /// </value>
         public static readonly int MulticastPort = 5353;
 
-        static readonly IPAddress MulticastAddressIp4 = IPAddress.Parse("224.0.0.251");
-        static readonly IPAddress MulticastAddressIp6 = IPAddress.Parse("FF02::FB");
-        static readonly IPEndPoint MdnsEndpointIp6 = new IPEndPoint(MulticastAddressIp6, MulticastPort);
-        static readonly IPEndPoint MdnsEndpointIp4 = new IPEndPoint(MulticastAddressIp4, MulticastPort);
+        private static readonly IPAddress MulticastAddressIp4 = IPAddress.Parse("224.0.0.251");
+        private static readonly IPAddress MulticastAddressIp6 = IPAddress.Parse("FF02::FB");
+        private static readonly IPEndPoint MdnsEndpointIp6 = new(MulticastAddressIp6, MulticastPort);
+        private static readonly IPEndPoint MdnsEndpointIp4 = new(MulticastAddressIp4, MulticastPort);
 
-        readonly List<UdpClient> receivers;
-        readonly ConcurrentDictionary<IPAddress, UdpClient> senders = new ConcurrentDictionary<IPAddress, UdpClient>();
+        private readonly List<UdpClient> receivers;
+        private readonly ConcurrentDictionary<IPAddress, UdpClient> senders = new ConcurrentDictionary<IPAddress, UdpClient>();
 
         public event EventHandler<UdpReceiveResult> MessageReceived;
 
@@ -103,6 +103,7 @@ namespace Makaretu.Dns
                             sender.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(MulticastAddressIp4));
                             sender.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback, true);
                             break;
+
                         case AddressFamily.InterNetworkV6:
                             receiver6.Client.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.AddMembership, new IPv6MulticastOption(MulticastAddressIp6, address.ScopeId));
                             sender.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
@@ -110,6 +111,7 @@ namespace Makaretu.Dns
                             sender.Client.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.AddMembership, new IPv6MulticastOption(MulticastAddressIp6));
                             sender.Client.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.MulticastLoopback, true);
                             break;
+
                         default:
                             throw new NotSupportedException($"Address family {address.AddressFamily}.");
                     }
@@ -147,7 +149,7 @@ namespace Makaretu.Dns
                 {
                     var endpoint = sender.Key.AddressFamily == AddressFamily.InterNetwork ? MdnsEndpointIp4 : MdnsEndpointIp6;
                     await sender.Value.SendAsync(
-                        message, message.Length, 
+                        message, message.Length,
                         endpoint)
                     .ConfigureAwait(false);
                 }
@@ -159,7 +161,7 @@ namespace Makaretu.Dns
             }
         }
 
-        void Listen(UdpClient receiver)
+        private void Listen(UdpClient receiver)
         {
             // ReceiveAsync does not support cancellation.  So the receiver is disposed
             // to stop it. See https://github.com/dotnet/corefx/issues/9848
@@ -182,7 +184,7 @@ namespace Makaretu.Dns
             });
         }
 
-        IEnumerable<IPAddress> GetNetworkInterfaceLocalAddresses(NetworkInterface nic)
+        private IEnumerable<IPAddress> GetNetworkInterfaceLocalAddresses(NetworkInterface nic)
         {
             return nic
                 .GetIPProperties()
@@ -250,6 +252,6 @@ namespace Makaretu.Dns
             GC.SuppressFinalize(this);
         }
 
-        #endregion
+        #endregion IDisposable Support
     }
 }

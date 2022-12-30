@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard14;netstandard2;net461</TargetFrameworks>
+	  <TargetFramework>net7.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>Makaretu.Dns.Multicast</AssemblyName>
     <RootNamespace>Makaretu.Dns</RootNamespace>
@@ -32,8 +32,7 @@
 
   <ItemGroup>
     <PackageReference Include="Common.Logging" Version="3.4.1" />
-    <PackageReference Include="IPNetwork2" Version="2.1.2" />
-    <PackageReference Include="Makaretu.Dns" Version="2.0.1" />
+    <PackageReference Include="IPNetwork2" Version="2.6.543" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard14'">
@@ -42,6 +41,12 @@
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2'">
     <PackageReference Include="Tmds.LibC" Version="0.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Makaretu.Dns">
+      <HintPath>..\..\net-dns\src\bin\Release\net7.0\Makaretu.Dns.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

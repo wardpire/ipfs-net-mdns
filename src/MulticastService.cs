@@ -28,45 +28,46 @@ namespace Makaretu.Dns
     public class MulticastService : IResolver, IDisposable
     {
         // IP header (20 bytes for IPv4; 40 bytes for IPv6) and the UDP header(8 bytes).
-        const int packetOverhead = 48;
-        const int maxDatagramSize = Message.MaxLength;
+        private const int packetOverhead = 48;
 
-        static readonly TimeSpan maxLegacyUnicastTTL = TimeSpan.FromSeconds(10);
-        static readonly ILog log = LogManager.GetLogger(typeof(MulticastService));
-        static readonly IPNetwork[] LinkLocalNetworks = new[] { IPNetwork.Parse("169.254.0.0/16"), IPNetwork.Parse("fe80::/10") };
+        private const int maxDatagramSize = Message.MaxLength;
 
-        List<NetworkInterface> knownNics = new List<NetworkInterface>();
-        int maxPacketSize;
+        private static readonly TimeSpan maxLegacyUnicastTTL = TimeSpan.FromSeconds(10);
+        private static readonly ILog log = LogManager.GetLogger(typeof(MulticastService));
+        private static readonly IPNetwork[] LinkLocalNetworks = new[] { IPNetwork.Parse("169.254.0.0/16"), IPNetwork.Parse("fe80::/10") };
+
+        private List<NetworkInterface> knownNics = new();
+        private int maxPacketSize;
 
         /// <summary>
         ///   Recently sent messages.
         /// </summary>
-        RecentMessages sentMessages = new RecentMessages();
+        private RecentMessages sentMessages = new();
 
         /// <summary>
         ///   Recently received messages.
         /// </summary>
-        RecentMessages receivedMessages = new RecentMessages();
+        private RecentMessages receivedMessages = new();
 
         /// <summary>
         ///   The multicast client.
         /// </summary>
-        MulticastClient client;
+        private MulticastClient client;
 
         /// <summary>
         ///   Use to send unicast IPv4 answers.
         /// </summary>
-        UdpClient unicastClientIp4 = new UdpClient(AddressFamily.InterNetwork);
+        private UdpClient unicastClientIp4 = new(AddressFamily.InterNetwork);
 
         /// <summary>
         ///   Use to send unicast IPv6 answers.
         /// </summary>
-        UdpClient unicastClientIp6 = new UdpClient(AddressFamily.InterNetworkV6);
+        private UdpClient unicastClientIp6 = new(AddressFamily.InterNetworkV6);
 
         /// <summary>
         ///   Function used for listening filtered network interfaces.
         /// </summary>
-        Func<IEnumerable<NetworkInterface>, IEnumerable<NetworkInterface>> networkInterfacesFilter;
+        private readonly Func<IEnumerable<NetworkInterface>, IEnumerable<NetworkInterface>> networkInterfacesFilter;
 
         /// <summary>
         ///   Set the default TTLs.
@@ -114,7 +115,7 @@ namespace Makaretu.Dns
         public event EventHandler<byte[]> MalformedMessage;
 
         /// <summary>
-        ///   Raised when one or more network interfaces are discovered. 
+        ///   Raised when one or more network interfaces are discovered.
         /// </summary>
         /// <value>
         ///   Contains the network interface(s).
@@ -172,7 +173,7 @@ namespace Makaretu.Dns
         /// </value>
         /// <remarks>
         ///   When the interval is reached a task is started to discover any
-        ///   new network interfaces. 
+        ///   new network interfaces.
         /// </remarks>
         /// <seealso cref="NetworkInterfaceDiscovered"/>
         [Obsolete("This property is deprecated and will be removed in nearest future. Using timer removed with obsording of NetworkChange.NetworkAddressChanged event.", false)]
@@ -273,9 +274,9 @@ namespace Makaretu.Dns
             client = null;
         }
 
-        void OnNetworkAddressChanged(object sender, EventArgs e) => FindNetworkInterfaces();
+        private void OnNetworkAddressChanged(object sender, EventArgs e) => FindNetworkInterfaces();
 
-        void FindNetworkInterfaces()
+        private void FindNetworkInterfaces()
         {
             log.Debug("Finding network interfaces");
 
@@ -327,16 +328,12 @@ namespace Makaretu.Dns
 
                 // Magic from @eshvatskyi
                 //
-                // I've seen situation when NetworkAddressChanged is not triggered 
-                // (wifi off, but NIC is not disabled, wifi - on, NIC was not changed 
+                // I've seen situation when NetworkAddressChanged is not triggered
+                // (wifi off, but NIC is not disabled, wifi - on, NIC was not changed
                 // so no event). Rebinding fixes this.
                 //
                 // Do magic only on Windows.
-#if NET461
-                if (Environment.OSVersion.Platform.ToString().StartsWith("Win"))
-#else
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-#endif
                 {
                     NetworkChange.NetworkAddressChanged -= OnNetworkAddressChanged;
                     NetworkChange.NetworkAddressChanged += OnNetworkAddressChanged;
@@ -349,7 +346,7 @@ namespace Makaretu.Dns
         }
 
         /// <inheritdoc />
-        public Task<Message> ResolveAsync(Message request, CancellationToken cancel = default(CancellationToken))
+        public Task<Message> ResolveAsync(Message request, CancellationToken cancel = default)
         {
             var tsc = new TaskCompletionSource<Message>();
 
@@ -441,7 +438,7 @@ namespace Makaretu.Dns
             msg.Questions.Add(new Question
             {
                 Name = name,
-                Class = (DnsClass) ((ushort)klass | 0x8000),
+                Class = (DnsClass)((ushort)klass | 0x8000),
                 Type = type
             });
 
@@ -491,7 +488,7 @@ namespace Makaretu.Dns
         ///   the <see cref="Message.Id"/> set to zero and any questions are removed.
         ///   </para>
         ///   <para>
-        ///   The <paramref name="answer"/> is <see cref="Message.Truncate">truncated</see> 
+        ///   The <paramref name="answer"/> is <see cref="Message.Truncate">truncated</see>
         ///   if exceeds the maximum packet length.
         ///   </para>
         ///   <para>
@@ -541,7 +538,7 @@ namespace Makaretu.Dns
         /// </exception>
         /// <remarks>
         ///   <para>
-        ///   If the <paramref name="query"/> is a standard multicast query (sent to port 5353), then 
+        ///   If the <paramref name="query"/> is a standard multicast query (sent to port 5353), then
         ///   <see cref="SendAnswer(Message, bool)"/> is called.
         ///   </para>
         ///   <para>
@@ -552,7 +549,7 @@ namespace Makaretu.Dns
         ///   and all resource record TTLs have a max value of 10 seconds.
         ///   </para>
         ///   <para>
-        ///   The <paramref name="answer"/> is <see cref="Message.Truncate">truncated</see> 
+        ///   The <paramref name="answer"/> is <see cref="Message.Truncate">truncated</see>
         ///   if exceeds the maximum packet length.
         ///   </para>
         ///   <para>
@@ -590,7 +587,7 @@ namespace Makaretu.Dns
             Send(answer, checkDuplicate, query.RemoteEndPoint);
         }
 
-        void Send(Message msg, bool checkDuplicate, IPEndPoint remoteEndPoint = null)
+        private void Send(Message msg, bool checkDuplicate, IPEndPoint remoteEndPoint = null)
         {
             var packet = msg.ToByteArray();
             if (packet.Length > maxPacketSize)
@@ -618,21 +615,21 @@ namespace Makaretu.Dns
         }
 
         /// <summary>
-        ///   Called by the MulticastClient when a DNS message is received.	
-        /// </summary>	
+        ///   Called by the MulticastClient when a DNS message is received.
+        /// </summary>
         /// <param name="sender">
         ///   The <see cref="MulticastClient"/> that got the message.
         /// </param>
-        /// <param name="result">	
-        ///   The received message <see cref="UdpReceiveResult"/>.	
-        /// </param>	
-        /// <remarks>	
-        ///   Decodes the <paramref name="result"/> and then raises	
-        ///   either the <see cref="QueryReceived"/> or <see cref="AnswerReceived"/> event.	
-        ///   <para>	
-        ///   Multicast DNS messages received with an OPCODE or RCODE other than zero 	
-        ///   are silently ignored.	
-        ///   </para>	
+        /// <param name="result">
+        ///   The received message <see cref="UdpReceiveResult"/>.
+        /// </param>
+        /// <remarks>
+        ///   Decodes the <paramref name="result"/> and then raises
+        ///   either the <see cref="QueryReceived"/> or <see cref="AnswerReceived"/> event.
+        ///   <para>
+        ///   Multicast DNS messages received with an OPCODE or RCODE other than zero
+        ///   are silently ignored.
+        ///   </para>
         ///   <para>
         ///   If the message cannot be decoded, then the <see cref="MalformedMessage"/>
         ///   event is raised.
@@ -682,7 +679,7 @@ namespace Makaretu.Dns
             }
         }
 
-#region IDisposable Support
+        #region IDisposable Support
 
         /// <inheritdoc />
         protected virtual void Dispose(bool disposing)
@@ -694,11 +691,8 @@ namespace Makaretu.Dns
         }
 
         /// <inheritdoc />
-        public void Dispose()
-        {
-            Dispose(true);
-        }
+        public void Dispose() => Dispose(true);
 
-#endregion
+        #endregion IDisposable Support
     }
 }

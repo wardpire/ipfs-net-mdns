@@ -34,4 +34,3 @@ namespace Makaretu.Dns
         public bool IsLegacyUnicast => RemoteEndPoint.Port != MulticastClient.MulticastPort;
     }
 }
-
