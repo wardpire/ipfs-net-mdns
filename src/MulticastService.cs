@@ -200,7 +200,7 @@ namespace Makaretu.Dns
         {
             var nics = NetworkInterface.GetAllNetworkInterfaces()
                 .Where(nic => nic.OperationalStatus == OperationalStatus.Up)
-                .Where(nic => nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+//                .Where(nic => nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
                 .ToArray();
             if (nics.Length > 0)
                 return nics;
