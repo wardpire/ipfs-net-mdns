@@ -20,7 +20,7 @@ namespace Makaretu.Dns
         ///   Recent messages.
         /// </summary>
         /// <value>
-        ///   The key is the Base64 encoding of the MD5 hash of 
+        ///   The key is the Base64 encoding of the MD5 hash of
         ///   a message and the value is when the message was seen.
         /// </value>
         public ConcurrentDictionary<string, DateTime> Messages = new ConcurrentDictionary<string, DateTime>();

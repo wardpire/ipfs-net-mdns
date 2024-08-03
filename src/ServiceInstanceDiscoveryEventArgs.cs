@@ -20,4 +20,3 @@ namespace Makaretu.Dns
         public DomainName ServiceInstanceName { get; set; }
     }
 }
-

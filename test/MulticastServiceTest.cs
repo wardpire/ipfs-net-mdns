@@ -6,11 +6,11 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Makaretu.Dns
 {
-
     [TestClass]
     public class MulticastServiceTest
     {

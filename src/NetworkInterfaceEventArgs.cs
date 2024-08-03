@@ -19,4 +19,3 @@ namespace Makaretu.Dns
         public IEnumerable<NetworkInterface> NetworkInterfaces { get; set; }
     }
 }
-

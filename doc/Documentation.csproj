@@ -1,11 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2</TargetFrameworks>
+	  <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Makaretu.Dns" Version="1.2.0" />
+    <Reference Include="Makaretu.Dns">
+      <HintPath>..\..\net-dns\src\bin\Release\net6.0\Makaretu.Dns.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
